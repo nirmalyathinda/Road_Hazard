@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start backend",
+      "type": "shell",
+      "command": "cd \"${workspaceFolder}/server\" && node server.js",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start frontend",
+      "type": "shell",
+      "command": "cd \"${workspaceFolder}/client\" && npm run dev -- --host 127.0.0.1",
+      "isBackground": true,
+      "problemMatcher": []
+    },
+    {
+      "label": "Start app (client + server)",
+      "dependsOn": [
+        "Start backend",
+        "Start frontend"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    }
+  ]
+}

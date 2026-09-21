@@ -1,0 +1,24 @@
+:root {
+  --bs-info: #000080;
+  --bs-info-rgb: 0, 0, 128;
+}
+
+.btn-info {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: #000080;
+  --bs-btn-border-color: #000080;
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: #000066;
+  --bs-btn-hover-border-color: #000066;
+  --bs-btn-active-bg: #00004d;
+  --bs-btn-active-border-color: #00004d;
+}
+
+body {
+  margin: 0;
+}
+
+#root {
+  min-height: 100vh;
+}
+
