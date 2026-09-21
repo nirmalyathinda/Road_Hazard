@@ -133,6 +133,10 @@ app.patch('/api/complaints/:id/status', requireAdmin, async (req, res) => {
     return res.status(400).json({ message: 'Invalid complaint status' });
   }
 
+  if (req.user.role === 'technician' && status !== 'Resolved') {
+    return res.status(403).json({ message: 'Technicians can only complete reviewed complaints' });
+  }
+
   try {
     let complaintReference = complaintsCollection.doc(id);
     let complaintSnapshot = await complaintReference.get();
@@ -154,6 +158,10 @@ app.patch('/api/complaints/:id/status', requireAdmin, async (req, res) => {
 
     if (!complaintSnapshot.exists) {
       return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    if (req.user.role === 'technician' && normalizeComplaint(complaintSnapshot).status !== 'Reviewed') {
+      return res.status(409).json({ message: 'Only reviewed complaints can be completed' });
     }
 
     await complaintReference.update({ status });

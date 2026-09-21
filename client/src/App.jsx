@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
+import AdminDashboard from './AdminDashboard';
+import TechnicianDashboard from './TechnicianDashboard';
 
 const translations = {
   en: {
-    language: 'Language', cityOperations: 'City operations', adminSignIn: 'Admin sign in', loginDescription: 'Access the road hazard complaint queue.', username: 'Username', password: 'Password', signIn: 'Sign in to Admin', signingIn: 'Signing in...', prototypeLogin: 'Prototype login: admin / admin123', invalidCredentials: 'Invalid username or password.', roadHazardReview: 'Road hazard review', dashboardDescription: 'Monitor and triage reports from the citizen mobile app.', liveQueue: 'Live queue', logOut: 'Log out', home: 'Home', hazards: 'Hazards', settings: 'Settings', settingsDescription: 'Manage dashboard preferences.', totalReports: 'Total reports', needsReview: 'Needs review', reviewed: 'Reviewed', completed: 'Completed', rejected: 'Rejected', complaintQueue: 'Complaint queue', queueDescription: 'Review submitted hazards and keep the city response team informed.', report: 'Report', hazard: 'Hazard', location: 'Location', dateReported: 'Date reported', status: 'Status', action: 'Action', loading: 'Loading complaints...', noComplaints: 'No complaints found.', markReviewed: 'Verify', reject: 'Reject', resolve: 'Complete', updating: 'Updating...', unableToLoad: 'Unable to load complaints. Your session may have expired.', updateFailed: 'The complaint could not be updated. Please try again.', pending: 'Pending', resolved: 'Resolved', pothole: 'Pothole', fallenTree: 'Fallen Tree', brokenSign: 'Broken Sign'
+    language: 'Language', cityOperations: 'City operations', adminSignIn: 'Staff sign in', loginDescription: 'Access the road hazard operations dashboard.', username: 'Username', password: 'Password', signIn: 'Sign in', signingIn: 'Signing in...', prototypeLogin: 'Use your Firebase staff account', invalidCredentials: 'Invalid username or password.', roadHazardReview: 'Road hazard review', dashboardDescription: 'Monitor and triage reports from the citizen mobile app.', technicianDashboard: 'Technician workspace', technicianDescription: 'Work through verified hazards and report completed repairs.', adminRole: 'Administrator', technicianRole: 'Technician', liveQueue: 'Live queue', assignedWork: 'Assigned work', logOut: 'Log out', home: 'Home', hazards: 'Hazards', settings: 'Settings', settingsDescription: 'Manage dashboard preferences.', totalReports: 'Total reports', needsReview: 'Needs review', reviewed: 'Reviewed', completed: 'Completed', rejected: 'Rejected', complaintQueue: 'Complaint queue', queueDescription: 'Review submitted hazards and keep the city response team informed.', technicianQueueDescription: 'Complete verified hazards assigned to the field team.', report: 'Report', hazard: 'Hazard', location: 'Location', dateReported: 'Date reported', status: 'Status', action: 'Action', loading: 'Loading complaints...', noComplaints: 'No complaints found.', noAssignedWork: 'No verified hazards are waiting for repair.', markReviewed: 'Verify', reject: 'Reject', resolve: 'Complete', updating: 'Updating...', unableToLoad: 'Unable to load complaints. Your session may have expired.', updateFailed: 'The complaint could not be updated. Please try again.', pending: 'Pending', resolved: 'Resolved', pothole: 'Pothole', fallenTree: 'Fallen Tree', brokenSign: 'Broken Sign'
   },
   si: {
     language: 'භාෂාව', cityOperations: 'නගර මෙහෙයුම්', adminSignIn: 'පරිපාලක පිවිසුම', loginDescription: 'මාර්ග අනතුරු පැමිණිලි පෝලිමට පිවිසෙන්න.', username: 'පරිශීලක නාමය', password: 'මුරපදය', signIn: 'පරිපාලක ලෙස පිවිසෙන්න', signingIn: 'පිවිසෙමින්...', prototypeLogin: 'ආදර්ශ පිවිසුම: admin / admin123', invalidCredentials: 'පරිශීලක නාමය හෝ මුරපදය වැරදියි.', roadHazardReview: 'මාර්ග අනතුරු සමාලෝචනය', dashboardDescription: 'පුරවැසි ජංගම යෙදුමෙන් ලැබෙන වාර්තා පරීක්ෂා කරන්න.', liveQueue: 'සජීවී පෝලිම', logOut: 'ඉවත් වන්න', home: 'මුල් පිටුව', hazards: 'අනතුරු', settings: 'සැකසුම්', settingsDescription: 'උපකරණ පුවරු මනාප කළමනාකරණය කරන්න.', totalReports: 'මුළු වාර්තා', needsReview: 'සමාලෝචනය අවශ්‍යයි', reviewed: 'සමාලෝචනය කළ', completed: 'සම්පූර්ණ කළ', rejected: 'ප්‍රතික්ෂේප කළ', complaintQueue: 'පැමිණිලි පෝලිම', queueDescription: 'වාර්තා කළ අනතුරු සමාලෝචනය කර ප්‍රතිචාර කණ්ඩායම දැනුවත් කරන්න.', report: 'වාර්තාව', hazard: 'අනතුර', location: 'ස්ථානය', dateReported: 'වාර්තා කළ දිනය', status: 'තත්ත්වය', action: 'ක්‍රියාව', loading: 'පැමිණිලි පූරණය වෙමින්...', noComplaints: 'පැමිණිලි හමු නොවීය.', markReviewed: 'තහවුරු කරන්න', reject: 'ප්‍රතික්ෂේප කරන්න', resolve: 'සම්පූර්ණ කරන්න', updating: 'යාවත්කාලීන කරමින්...', unableToLoad: 'පැමිණිලි පූරණය කළ නොහැක. ඔබගේ සැසිය අවසන් වී තිබිය හැක.', updateFailed: 'පැමිණිල්ල යාවත්කාලීන කළ නොහැක. නැවත උත්සාහ කරන්න.', pending: 'පොරොත්තුවෙන්', resolved: 'විසඳන ලදී', pothole: 'වළක්', fallenTree: 'වැටුණු ගස', brokenSign: 'කැඩුණු සංඥා පුවරුව'
@@ -20,6 +22,7 @@ const languageOptions = { en: 'English', si: 'සිංහල', ta: 'தமி�
 function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem('road-hazard-language') || 'en');
   const [token, setToken] = useState('');
+  const [role, setRole] = useState('');
   const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -28,7 +31,8 @@ function App() {
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
   const [activePage, setActivePage] = useState('home');
-  const text = translations[language];
+  const text = { ...translations.en, ...translations[language] };
+  const isTechnician = role === 'technician';
 
   const changeLanguage = (event) => {
     const nextLanguage = event.target.value;
@@ -64,8 +68,11 @@ function App() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, credentials.username, credentials.password);
-      const firebaseToken = await userCredential.user.getIdToken();
+      const firebaseToken = await userCredential.user.getIdToken(true);
+      const tokenResult = await userCredential.user.getIdTokenResult(true);
+      const nextRole = tokenResult.claims.role === 'technician' ? 'technician' : 'admin';
       setToken(firebaseToken);
+      setRole(nextRole);
     } catch {
       setLoginError(text.invalidCredentials);
     } finally {
@@ -75,6 +82,7 @@ function App() {
 
   const handleLogout = () => {
     setToken('');
+    setRole('');
     setComplaints([]);
     setError('');
   };
@@ -98,21 +106,6 @@ function App() {
       setUpdatingId(null);
     }
   };
-
-  const pendingCount = complaints.filter((complaint) => complaint.status === 'Pending').length;
-  const reviewedCount = complaints.filter((complaint) => complaint.status === 'Reviewed').length;
-  const rejectedCount = complaints.filter((complaint) => complaint.status === 'Rejected').length;
-  const completedCount = complaints.filter((complaint) => complaint.status === 'Resolved').length;
-
-  const statusBadge = {
-    Pending: 'bg-warning text-dark',
-    Reviewed: 'bg-success',
-    Resolved: 'bg-primary',
-    Rejected: 'bg-danger'
-  };
-
-  const statusLabel = { Pending: text.pending, Reviewed: text.reviewed, Resolved: text.resolved, Rejected: text.rejected };
-  const hazardLabel = { Pothole: text.pothole, 'Fallen Tree': text.fallenTree, 'Broken Sign': text.brokenSign };
 
   if (!token) {
     return (
@@ -149,13 +142,13 @@ function App() {
           <div className="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
               <p className="text-uppercase text-info small fw-semibold mb-1">{text.cityOperations}</p>
-              <h1 className="h2 mb-1">{text.roadHazardReview}</h1>
-              <p className="text-white-50 mb-0">{text.dashboardDescription}</p>
+              <h1 className="h2 mb-1">{isTechnician ? text.technicianDashboard : text.roadHazardReview}</h1>
+              <p className="text-white-50 mb-0">{isTechnician ? text.technicianDescription : text.dashboardDescription}</p>
             </div>
-            <div className="d-flex align-items-center gap-3"><label className="visually-hidden" htmlFor="dashboard-language">{text.language}</label><select id="dashboard-language" className="form-select form-select-sm w-auto" value={language} onChange={changeLanguage}>{Object.entries(languageOptions).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select><span className="badge rounded-pill text-bg-info px-3 py-2">{text.liveQueue}</span><button className="btn btn-sm btn-outline-light" onClick={handleLogout}>{text.logOut}</button></div>
+            <div className="d-flex align-items-center gap-3"><label className="visually-hidden" htmlFor="dashboard-language">{text.language}</label><select id="dashboard-language" className="form-select form-select-sm w-auto" value={language} onChange={changeLanguage}>{Object.entries(languageOptions).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select><span className="badge rounded-pill text-bg-info px-3 py-2">{isTechnician ? text.technicianRole : text.adminRole}</span><button className="btn btn-sm btn-outline-light" onClick={handleLogout}>{text.logOut}</button></div>
           </div>
           <nav className="category-nav" aria-label="Main navigation">
-            {[['home', text.home], ['hazards', text.hazards], ['settings', text.settings]].map(([page, label]) => (
+            {[['home', text.home], ['hazards', isTechnician ? text.assignedWork : text.hazards], ['settings', text.settings]].map(([page, label]) => (
               <button key={page} className={`category-nav-link ${activePage === page ? 'active' : ''}`} onClick={() => setActivePage(page)}>{label}</button>
             ))}
           </nav>
@@ -163,70 +156,11 @@ function App() {
       </header>
 
       <main className="container py-4 py-lg-5">
-        {activePage === 'settings' && <div className="card border-0 shadow-sm settings-panel"><div className="card-body p-4"><h2 className="h5 mb-2">{text.settings}</h2><p className="text-secondary mb-4">{text.settingsDescription}</p><label className="form-label" htmlFor="settings-language">{text.language}</label><select id="settings-language" className="form-select settings-control" value={language} onChange={changeLanguage}>{Object.entries(languageOptions).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></div></div>}
-
-        {activePage === 'home' && <div className="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-3 mb-4">
-          <div className="col">
-            <div className="card border-0 shadow-sm h-100"><div className="card-body">
-              <p className="text-secondary small mb-2">{text.totalReports}</p>
-              <p className="display-6 fw-semibold mb-0">{complaints.length}</p>
-            </div></div>
-          </div>
-          <div className="col">
-            <div className="card border-0 shadow-sm h-100"><div className="card-body">
-              <p className="text-secondary small mb-2">{text.needsReview}</p>
-              <p className="display-6 fw-semibold text-warning mb-0">{pendingCount}</p>
-            </div></div>
-          </div>
-          <div className="col">
-            <div className="card border-0 shadow-sm h-100"><div className="card-body">
-              <p className="text-secondary small mb-2">{text.reviewed}</p>
-              <p className="display-6 fw-semibold text-success mb-0">{reviewedCount}</p>
-            </div></div>
-          </div>
-          <div className="col">
-            <div className="card border-0 shadow-sm h-100"><div className="card-body">
-              <p className="text-secondary small mb-2">{text.rejected}</p>
-              <p className="display-6 fw-semibold text-danger mb-0">{rejectedCount}</p>
-            </div></div>
-          </div>
-          <div className="col">
-            <div className="card border-0 shadow-sm h-100"><div className="card-body">
-              <p className="text-secondary small mb-2">{text.completed}</p>
-              <p className="display-6 fw-semibold text-primary mb-0">{completedCount}</p>
-            </div></div>
-          </div>
-        </div>}
-
-        {error && <div className="alert alert-danger" role="alert">{error}</div>}
-
-        {activePage === 'hazards' && <div className="card border-0 shadow-sm">
-          <div className="card-header bg-white border-0 p-4">
-            <h2 className="h5 mb-1">{text.complaintQueue}</h2>
-            <p className="text-secondary mb-0">{text.queueDescription}</p>
-          </div>
-          <div className="table-responsive">
-            <table className="table table-hover align-middle mb-0">
-              <thead className="table-light">
-                <tr><th className="ps-4">{text.report}</th><th>{text.hazard}</th><th>{text.location}</th><th>{text.dateReported}</th><th>{text.status}</th><th className="text-end pe-4">{text.action}</th></tr>
-              </thead>
-              <tbody>
-                {isLoading && <tr><td colSpan="6" className="text-center py-5 text-secondary">{text.loading}</td></tr>}
-                {!isLoading && complaints.length === 0 && <tr><td colSpan="6" className="text-center py-5 text-secondary">{text.noComplaints}</td></tr>}
-                {!isLoading && complaints.map((complaint) => (
-                  <tr key={complaint.id}>
-                    <td className="ps-4"><div className="d-flex align-items-center gap-3"><img src={complaint.image_url || '/logo.jpg'} alt="" width="52" height="52" className="rounded object-fit-cover" /><span className="fw-semibold">{complaint.id}</span></div></td>
-                    <td className="fw-medium">{hazardLabel[complaint.hazard_type] || complaint.hazard_type}</td>
-                    <td className="text-secondary">{complaint.location}</td>
-                    <td className="text-secondary">{new Date(complaint.date_reported).toLocaleDateString()}</td>
-                    <td><span className={`badge ${statusBadge[complaint.status] || 'bg-secondary'}`}>{statusLabel[complaint.status] || complaint.status}</span></td>
-                    <td className="text-end pe-4"><div className="d-flex justify-content-end gap-2"><button className="btn btn-sm btn-outline-success" disabled={complaint.status !== 'Pending' || updatingId === complaint.id} onClick={() => handleStatusUpdate(complaint.id, 'Reviewed')}>{text.markReviewed}</button><button className="btn btn-sm btn-outline-danger" disabled={complaint.status !== 'Pending' || updatingId === complaint.id} onClick={() => handleStatusUpdate(complaint.id, 'Rejected')}>{text.reject}</button><button className="btn btn-sm btn-outline-primary" disabled={complaint.status !== 'Reviewed' || updatingId === complaint.id} onClick={() => handleStatusUpdate(complaint.id, 'Resolved')}>{updatingId === complaint.id ? text.updating : text.resolve}</button></div></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>}
+        {isTechnician ? (
+          <TechnicianDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} />
+        ) : (
+          <AdminDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} />
+        )}
       </main>
     </div>
   );
