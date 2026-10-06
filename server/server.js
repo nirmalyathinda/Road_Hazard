@@ -30,8 +30,34 @@ initializeApp({
 const db = getFirestore();
 const auth = getAuth();
 const complaintsCollection = db.collection('complaints');
+const usersCollection = db.collection('users');
 
 const getComplaintDate = (complaint) => complaint.date_reported || complaint['Date Reported'] || complaint.dateReported;
+
+const normalizeLocation = (location) => {
+  if (location && typeof location.latitude === 'number' && typeof location.longitude === 'number') {
+    return { latitude: location.latitude, longitude: location.longitude };
+  }
+
+  if (typeof location !== 'string') {
+    return location || '';
+  }
+
+  const coordinates = location.trim().match(/^(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)$/);
+
+  if (!coordinates) {
+    return location;
+  }
+
+  const latitude = Number(coordinates[1]);
+  const longitude = Number(coordinates[2]);
+
+  if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+    return location;
+  }
+
+  return { latitude, longitude };
+};
 
 const normalizeComplaint = (document) => {
   const complaint = document.data();
@@ -41,7 +67,7 @@ const normalizeComplaint = (document) => {
     ...complaint,
     id: complaint.id || complaint.report || complaint.Report || document.id,
     hazard_type: complaint.hazard_type || complaint.hazard || complaint.Hazard || '',
-    location: complaint.location || complaint.Location || '',
+    location: normalizeLocation(complaint.location || complaint.Location || ''),
     date_reported: dateReported?.toDate ? dateReported.toDate().toISOString() : dateReported || '',
     status: complaint.status || complaint.Status || 'Pending',
     action: complaint.action || complaint.Action || '',
@@ -109,6 +135,26 @@ const requireAdmin = (req, res, next) => {
     .catch(() => res.status(401).json({ message: 'Invalid or expired Firebase token' }));
 };
 
+const requireAdminRole = (req, res, next) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).json({ message: 'Administrator access required' });
+  }
+
+  return next();
+};
+
+const normalizeUser = (document) => {
+  const user = document.data();
+
+  return {
+    email: user.email || '',
+    fullName: user.fullName || '',
+    idNumber: user.idNumber || '',
+    phone: user.phone || '',
+    id: user.id || document.id
+  };
+};
+
 // GET endpoint: Fetch all complaints
 app.get('/api/complaints', requireAdmin, async (req, res) => {
   try {
@@ -172,6 +218,50 @@ app.patch('/api/complaints/:id/status', requireAdmin, async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Unable to update complaint in Firebase' });
+  }
+});
+
+app.get('/api/users', requireAdmin, requireAdminRole, async (req, res) => {
+  try {
+    const snapshot = await usersCollection.get();
+    res.json(snapshot.docs.map(normalizeUser));
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Unable to load users from Firebase' });
+  }
+});
+
+app.post('/api/users', requireAdmin, requireAdminRole, async (req, res) => {
+  const { email, fullName, idNumber, password, phone } = req.body;
+
+  if (![email, fullName, idNumber, password, phone].every((value) => typeof value === 'string' && value.trim())) {
+    return res.status(400).json({ message: 'All user fields are required' });
+  }
+
+  try {
+    const userReference = usersCollection.doc();
+    await userReference.set({ email: email.trim(), fullName: fullName.trim(), idNumber: idNumber.trim(), password, phone: phone.trim(), id: userReference.id });
+    return res.status(201).json(normalizeUser(await userReference.get()));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Unable to add user to Firebase' });
+  }
+});
+
+app.delete('/api/users/:id', requireAdmin, requireAdminRole, async (req, res) => {
+  try {
+    const userReference = usersCollection.doc(req.params.id);
+    const userSnapshot = await userReference.get();
+
+    if (!userSnapshot.exists) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    await userReference.delete();
+    return res.status(204).send();
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Unable to remove user from Firebase' });
   }
 });
 

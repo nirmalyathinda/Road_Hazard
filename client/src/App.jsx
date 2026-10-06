@@ -1,13 +1,16 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import axios from 'axios';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
 import AdminDashboard from './AdminDashboard';
 import TechnicianDashboard from './TechnicianDashboard';
+import 'leaflet/dist/leaflet.css';
+
+const HazardMap = lazy(() => import('./HazardMap'));
 
 const translations = {
   en: {
-    language: 'Language', cityOperations: 'City operations', adminSignIn: 'Staff sign in', loginDescription: 'Access the road hazard operations dashboard.', username: 'Username', password: 'Password', signIn: 'Sign in', signingIn: 'Signing in...', prototypeLogin: 'Use your Firebase staff account', invalidCredentials: 'Invalid username or password.', roadHazardReview: 'Road hazard review', dashboardDescription: 'Monitor and triage reports from the citizen mobile app.', technicianDashboard: 'Technician workspace', technicianDescription: 'Work through verified hazards and report completed repairs.', adminRole: 'Administrator', technicianRole: 'Technician', liveQueue: 'Live queue', assignedWork: 'Assigned work', logOut: 'Log out', home: 'Home', hazards: 'Hazards', settings: 'Settings', settingsDescription: 'Manage dashboard preferences.', totalReports: 'Total reports', needsReview: 'Needs review', reviewed: 'Reviewed', completed: 'Completed', rejected: 'Rejected', complaintQueue: 'Complaint queue', queueDescription: 'Review submitted hazards and keep the city response team informed.', technicianQueueDescription: 'Complete verified hazards assigned to the field team.', report: 'Report', hazard: 'Hazard', location: 'Location', dateReported: 'Date reported', status: 'Status', action: 'Action', loading: 'Loading complaints...', noComplaints: 'No complaints found.', noAssignedWork: 'No verified hazards are waiting for repair.', markReviewed: 'Verify', reject: 'Reject', resolve: 'Complete', updating: 'Updating...', unableToLoad: 'Unable to load complaints. Your session may have expired.', updateFailed: 'The complaint could not be updated. Please try again.', pending: 'Pending', resolved: 'Resolved', pothole: 'Pothole', fallenTree: 'Fallen Tree', brokenSign: 'Broken Sign'
+    language: 'Language', cityOperations: 'City operations', adminSignIn: 'Staff sign in', loginDescription: 'Access the road hazard operations dashboard.', username: 'Username', password: 'Password', signIn: 'Sign in', signingIn: 'Signing in...', prototypeLogin: 'Use your Firebase staff account', invalidCredentials: 'Invalid username or password.', roadHazardReview: 'Road hazard review', dashboardDescription: 'Monitor and triage reports from the citizen mobile app.', technicianDashboard: 'Technician workspace', technicianDescription: 'Work through verified hazards and report completed repairs.', adminRole: 'Administrator', technicianRole: 'Technician', liveQueue: 'Live queue', assignedWork: 'Assigned work', logOut: 'Log out', home: 'Home', hazards: 'Hazards', users: 'Users', settings: 'Settings', settingsDescription: 'Manage dashboard preferences.', usersDescription: 'Add and remove registered users.', fullName: 'Full name', email: 'Email', idNumber: 'ID number', phone: 'Phone', addUser: 'Add user', addingUser: 'Adding...', removeUser: 'Remove', removingUser: 'Removing...', loadingUsers: 'Loading users...', noUsers: 'No users found.', totalReports: 'Total reports', needsReview: 'Needs review', reviewed: 'Reviewed', completed: 'Completed', rejected: 'Rejected', complaintQueue: 'Complaint queue', queueDescription: 'Review submitted hazards and keep the city response team informed.', technicianQueueDescription: 'Complete verified hazards assigned to the field team.', report: 'Report', hazard: 'Hazard', location: 'Location', dateReported: 'Date reported', status: 'Status', action: 'Action', loading: 'Loading complaints...', noComplaints: 'No complaints found.', noAssignedWork: 'No verified hazards are waiting for repair.', markReviewed: 'Verify', reject: 'Reject', resolve: 'Complete', updating: 'Updating...', unableToLoad: 'Unable to load complaints. Your session may have expired.', updateFailed: 'The complaint could not be updated. Please try again.', unableToLoadUsers: 'Unable to load users.', userActionFailed: 'The user action could not be completed.', pending: 'Pending', resolved: 'Resolved', pothole: 'Pothole', fallenTree: 'Fallen Tree', brokenSign: 'Broken Sign'
   },
   si: {
     language: 'භාෂාව', cityOperations: 'නගර මෙහෙයුම්', adminSignIn: 'පරිපාලක පිවිසුම', loginDescription: 'මාර්ග අනතුරු පැමිණිලි පෝලිමට පිවිසෙන්න.', username: 'පරිශීලක නාමය', password: 'මුරපදය', signIn: 'පරිපාලක ලෙස පිවිසෙන්න', signingIn: 'පිවිසෙමින්...', prototypeLogin: 'ආදර්ශ පිවිසුම: admin / admin123', invalidCredentials: 'පරිශීලක නාමය හෝ මුරපදය වැරදියි.', roadHazardReview: 'මාර්ග අනතුරු සමාලෝචනය', dashboardDescription: 'පුරවැසි ජංගම යෙදුමෙන් ලැබෙන වාර්තා පරීක්ෂා කරන්න.', liveQueue: 'සජීවී පෝලිම', logOut: 'ඉවත් වන්න', home: 'මුල් පිටුව', hazards: 'අනතුරු', settings: 'සැකසුම්', settingsDescription: 'උපකරණ පුවරු මනාප කළමනාකරණය කරන්න.', totalReports: 'මුළු වාර්තා', needsReview: 'සමාලෝචනය අවශ්‍යයි', reviewed: 'සමාලෝචනය කළ', completed: 'සම්පූර්ණ කළ', rejected: 'ප්‍රතික්ෂේප කළ', complaintQueue: 'පැමිණිලි පෝලිම', queueDescription: 'වාර්තා කළ අනතුරු සමාලෝචනය කර ප්‍රතිචාර කණ්ඩායම දැනුවත් කරන්න.', report: 'වාර්තාව', hazard: 'අනතුර', location: 'ස්ථානය', dateReported: 'වාර්තා කළ දිනය', status: 'තත්ත්වය', action: 'ක්‍රියාව', loading: 'පැමිණිලි පූරණය වෙමින්...', noComplaints: 'පැමිණිලි හමු නොවීය.', markReviewed: 'තහවුරු කරන්න', reject: 'ප්‍රතික්ෂේප කරන්න', resolve: 'සම්පූර්ණ කරන්න', updating: 'යාවත්කාලීන කරමින්...', unableToLoad: 'පැමිණිලි පූරණය කළ නොහැක. ඔබගේ සැසිය අවසන් වී තිබිය හැක.', updateFailed: 'පැමිණිල්ල යාවත්කාලීන කළ නොහැක. නැවත උත්සාහ කරන්න.', pending: 'පොරොත්තුවෙන්', resolved: 'විසඳන ලදී', pothole: 'වළක්', fallenTree: 'වැටුණු ගස', brokenSign: 'කැඩුණු සංඥා පුවරුව'
@@ -18,6 +21,19 @@ const translations = {
 };
 
 const languageOptions = { en: 'English', si: 'සිංහල', ta: 'தமிழ்' };
+const assignLabels = { en: 'Assign', si: 'පවරන්න', ta: 'ஒதுக்கு' };
+const showOnMapLabels = { en: 'Show on map', si: 'සිතියමේ පෙන්වන්න', ta: 'வரைபடத்தில் காண்க' };
+const mapLabels = { en: 'Map', si: 'සිතියම', ta: 'வரைபடம்' };
+const mapDescriptionLabels = {
+  en: 'Explore reported hazards by location.',
+  si: 'වාර්තා කළ අනතුරු ස්ථාන අනුව බලන්න.',
+  ta: 'அறிக்கையிடப்பட்ட ஆபத்துகளை இருப்பிடத்தின் அடிப்படையில் காண்க.'
+};
+const noMappedHazardLabels = {
+  en: 'No hazards with valid coordinates to show.',
+  si: 'පෙන්වීමට වලංගු ඛණ්ඩාංක සහිත අනතුරු නැත.',
+  ta: 'காட்டுவதற்கு சரியான ஆயத்தொலைவுகளுடன் ஆபத்துகள் இல்லை.'
+};
 
 function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem('road-hazard-language') || 'en');
@@ -30,8 +46,23 @@ function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [usersError, setUsersError] = useState('');
+  const [userForm, setUserForm] = useState({ email: '', fullName: '', idNumber: '', password: '', phone: '' });
+  const [isSavingUser, setIsSavingUser] = useState(false);
+  const [removingId, setRemovingId] = useState(null);
   const [activePage, setActivePage] = useState('home');
-  const text = { ...translations.en, ...translations[language] };
+  const [selectedHazardId, setSelectedHazardId] = useState(null);
+  const text = {
+    ...translations.en,
+    ...translations[language],
+    assign: assignLabels[language] || assignLabels.en,
+    mapView: mapLabels[language] || mapLabels.en,
+    mapDescription: mapDescriptionLabels[language] || mapDescriptionLabels.en,
+    showOnMap: showOnMapLabels[language] || showOnMapLabels.en,
+    noMappedHazards: noMappedHazardLabels[language] || noMappedHazardLabels.en
+  };
   const isTechnician = role === 'technician';
 
   const changeLanguage = (event) => {
@@ -60,6 +91,25 @@ function App() {
 
     fetchComplaints();
   }, [token, text.unableToLoad]);
+
+  useEffect(() => {
+    if (!token || role !== 'admin' || activePage !== 'users') return;
+
+    const fetchUsers = async () => {
+      setUsersLoading(true);
+      setUsersError('');
+      try {
+        const response = await axios.get('http://localhost:5000/api/users', { headers: { Authorization: `Bearer ${token}` } });
+        setUsers(response.data);
+      } catch {
+        setUsersError(text.unableToLoadUsers);
+      } finally {
+        setUsersLoading(false);
+      }
+    };
+
+    fetchUsers();
+  }, [activePage, role, text.unableToLoadUsers, token]);
 
   const handleLogin = async (event) => {
     event.preventDefault();
@@ -107,6 +157,41 @@ function App() {
     }
   };
 
+  const handleLocationClick = (id) => {
+    setSelectedHazardId(id);
+    setActivePage('map');
+  };
+
+  const handleUserFormChange = (field, value) => setUserForm((current) => ({ ...current, [field]: value }));
+
+  const handleAddUser = async (event) => {
+    event.preventDefault();
+    setIsSavingUser(true);
+    setUsersError('');
+    try {
+      const response = await axios.post('http://localhost:5000/api/users', userForm, { headers: { Authorization: `Bearer ${token}` } });
+      setUsers((current) => [...current, response.data]);
+      setUserForm({ email: '', fullName: '', idNumber: '', password: '', phone: '' });
+    } catch {
+      setUsersError(text.userActionFailed);
+    } finally {
+      setIsSavingUser(false);
+    }
+  };
+
+  const handleRemoveUser = async (id) => {
+    setRemovingId(id);
+    setUsersError('');
+    try {
+      await axios.delete(`http://localhost:5000/api/users/${id}`, { headers: { Authorization: `Bearer ${token}` } });
+      setUsers((current) => current.filter((user) => user.id !== id));
+    } catch {
+      setUsersError(text.userActionFailed);
+    } finally {
+      setRemovingId(null);
+    }
+  };
+
   if (!token) {
     return (
       <div className="min-vh-100 bg-dark d-flex align-items-center">
@@ -148,7 +233,7 @@ function App() {
             <div className="d-flex align-items-center gap-3"><label className="visually-hidden" htmlFor="dashboard-language">{text.language}</label><select id="dashboard-language" className="form-select form-select-sm w-auto" value={language} onChange={changeLanguage}>{Object.entries(languageOptions).map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select><span className="badge rounded-pill text-bg-info px-3 py-2">{isTechnician ? text.technicianRole : text.adminRole}</span><button className="btn btn-sm btn-outline-light" onClick={handleLogout}>{text.logOut}</button></div>
           </div>
           <nav className="category-nav" aria-label="Main navigation">
-            {[['home', text.home], ['hazards', isTechnician ? text.assignedWork : text.hazards], ['settings', text.settings]].map(([page, label]) => (
+            {[['home', text.home], ['hazards', isTechnician ? text.assignedWork : text.hazards], ['map', text.mapView], ...(!isTechnician ? [['users', text.users]] : []), ['settings', text.settings]].map(([page, label]) => (
               <button key={page} className={`category-nav-link ${activePage === page ? 'active' : ''}`} onClick={() => setActivePage(page)}>{label}</button>
             ))}
           </nav>
@@ -156,10 +241,14 @@ function App() {
       </header>
 
       <main className="container py-4 py-lg-5">
-        {isTechnician ? (
-          <TechnicianDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} />
+        {activePage === 'map' ? (
+          <Suspense fallback={<div className="py-5 text-center text-secondary">{text.loading}</div>}>
+            <HazardMap text={text} complaints={isTechnician ? complaints.filter((complaint) => complaint.status === 'Reviewed') : complaints} isLoading={isLoading} selectedHazardId={selectedHazardId} />
+          </Suspense>
+        ) : isTechnician ? (
+          <TechnicianDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} onLocationClick={handleLocationClick} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} />
         ) : (
-          <AdminDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} />
+          <AdminDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} onLocationClick={handleLocationClick} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} users={users} usersLoading={usersLoading} userForm={userForm} usersError={usersError} isSavingUser={isSavingUser} removingId={removingId} onUserFormChange={handleUserFormChange} onAddUser={handleAddUser} onRemoveUser={handleRemoveUser} />
         )}
       </main>
     </div>
