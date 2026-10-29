@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 export function DashboardStats({ text, complaints }) {
   const pendingCount = complaints.filter((complaint) => complaint.status === 'Pending').length;
   const reviewedCount = complaints.filter((complaint) => complaint.status === 'Reviewed').length;
@@ -16,6 +18,8 @@ export function DashboardStats({ text, complaints }) {
 }
 
 export function ComplaintQueue({ text, isLoading, updatingId, error, visibleComplaints, isTechnician, onStatusUpdate, onLocationClick }) {
+  const [completingId, setCompletingId] = useState(null);
+  const [completionMessage, setCompletionMessage] = useState('');
   const statusBadge = { Pending: 'bg-warning text-dark', Reviewed: 'bg-success', Resolved: 'bg-primary', Rejected: 'bg-danger' };
   const statusLabel = { Pending: text.pending, Reviewed: text.reviewed, Resolved: text.resolved, Rejected: text.rejected };
   const hazardLabel = { Pothole: text.pothole, 'Fallen Tree': text.fallenTree, 'Broken Sign': text.brokenSign };
@@ -28,6 +32,15 @@ export function ComplaintQueue({ text, isLoading, updatingId, error, visibleComp
     }
 
     return null;
+  };
+  const handleCompletionSubmit = async (event, complaintId) => {
+    event.preventDefault();
+    const updated = await onStatusUpdate(complaintId, 'Resolved', completionMessage.trim());
+
+    if (updated) {
+      setCompletingId(null);
+      setCompletionMessage('');
+    }
   };
 
   return (
@@ -46,7 +59,7 @@ export function ComplaintQueue({ text, isLoading, updatingId, error, visibleComp
               {!isLoading && visibleComplaints.length === 0 && <tr><td colSpan="6" className="text-center py-5 text-secondary">{isTechnician ? text.noAssignedWork : text.noComplaints}</td></tr>}
               {!isLoading && visibleComplaints.map((complaint) => (
                 <tr key={complaint.id}>
-                  <td className="ps-4"><div className="d-flex align-items-center gap-3"><img src={complaint.image_url || '/logo.jpg'} alt="" width="52" height="52" className="rounded object-fit-cover" /><span className="fw-semibold">{complaint.id}</span></div></td>
+                  <td className="ps-4"><div className="d-flex align-items-center gap-3"><img src={complaint.image_url || '/logo.jpg'} alt="" width="52" height="52" className="rounded object-fit-cover" /><div><span className="fw-semibold">{complaint.id}</span>{complaint.status === 'Resolved' && complaint.completion_message && <div className="text-secondary small mt-1">{text.completionNote}: {complaint.completion_message}</div>}</div></div></td>
                   <td className="fw-medium">{hazardLabel[complaint.hazard_type] || complaint.hazard_type}</td>
                   <td className="text-secondary">
                     {getCoordinates(complaint.location) ? (
@@ -57,7 +70,25 @@ export function ComplaintQueue({ text, isLoading, updatingId, error, visibleComp
                   </td>
                   <td className="text-secondary">{new Date(complaint.date_reported).toLocaleDateString()}</td>
                   <td><span className={`badge ${statusBadge[complaint.status] || 'bg-secondary'}`}>{statusLabel[complaint.status] || complaint.status}</span></td>
-                  <td className="text-end pe-4"><div className="d-flex justify-content-end gap-2">{!isTechnician && <><button className="btn btn-sm btn-outline-success" disabled={complaint.status !== 'Pending' || updatingId === complaint.id} onClick={() => onStatusUpdate(complaint.id, 'Reviewed')}>{updatingId === complaint.id ? text.updating : text.assign}</button><button className="btn btn-sm btn-outline-danger" disabled={complaint.status !== 'Pending' || updatingId === complaint.id} onClick={() => onStatusUpdate(complaint.id, 'Rejected')}>{text.reject}</button></>}{isTechnician && <button className="btn btn-sm btn-outline-primary" disabled={complaint.status !== 'Reviewed' || updatingId === complaint.id} onClick={() => onStatusUpdate(complaint.id, 'Resolved')}>{updatingId === complaint.id ? text.updating : text.resolve}</button>}</div></td>
+                  <td className="text-end pe-4">
+                    {!isTechnician ? (
+                      <div className="d-flex justify-content-end gap-2">
+                        <button className="btn btn-sm btn-outline-success" disabled={complaint.status !== 'Pending' || updatingId === complaint.id} onClick={() => onStatusUpdate(complaint.id, 'Reviewed')}>{updatingId === complaint.id ? text.updating : text.assign}</button>
+                        <button className="btn btn-sm btn-outline-danger" disabled={complaint.status !== 'Pending' || updatingId === complaint.id} onClick={() => onStatusUpdate(complaint.id, 'Rejected')}>{text.reject}</button>
+                      </div>
+                    ) : completingId === complaint.id ? (
+                      <form onSubmit={(event) => handleCompletionSubmit(event, complaint.id)}>
+                        <label className="visually-hidden" htmlFor={`completion-message-${complaint.id}`}>{text.completionMessage}</label>
+                        <textarea id={`completion-message-${complaint.id}`} className="form-control form-control-sm mb-2" rows="3" maxLength="1000" placeholder={text.completionMessage} value={completionMessage} onChange={(event) => setCompletionMessage(event.target.value)} />
+                        <div className="d-flex justify-content-end gap-2">
+                          <button className="btn btn-sm btn-outline-secondary" type="button" disabled={updatingId === complaint.id} onClick={() => { setCompletingId(null); setCompletionMessage(''); }}>{text.cancel}</button>
+                          <button className="btn btn-sm btn-primary" type="submit" disabled={updatingId === complaint.id}>{updatingId === complaint.id ? text.updating : text.saveCompletion}</button>
+                        </div>
+                      </form>
+                    ) : (
+                      <button className="btn btn-sm btn-outline-primary" disabled={complaint.status !== 'Reviewed' || updatingId === complaint.id} onClick={() => { setCompletingId(complaint.id); setCompletionMessage(''); }}>{updatingId === complaint.id ? text.updating : text.resolve}</button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -173,6 +173,7 @@ app.get('/api/complaints', requireAdmin, async (req, res) => {
 app.patch('/api/complaints/:id/status', requireAdmin, async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
+  const { completion_message: completionMessage } = req.body;
   const allowedStatuses = ['Pending', 'Reviewed', 'Rejected', 'Resolved'];
 
   if (!allowedStatuses.includes(status)) {
@@ -181,6 +182,10 @@ app.patch('/api/complaints/:id/status', requireAdmin, async (req, res) => {
 
   if (req.user.role === 'technician' && status !== 'Resolved') {
     return res.status(403).json({ message: 'Technicians can only complete reviewed complaints' });
+  }
+
+  if (req.user.role === 'technician' && completionMessage !== undefined && (typeof completionMessage !== 'string' || completionMessage.length > 1000)) {
+    return res.status(400).json({ message: 'Completion message must be 1000 characters or fewer' });
   }
 
   try {
@@ -210,9 +215,13 @@ app.patch('/api/complaints/:id/status', requireAdmin, async (req, res) => {
       return res.status(409).json({ message: 'Only reviewed complaints can be completed' });
     }
 
-    await complaintReference.update({ status });
+    const update = {
+      status,
+      ...(req.user.role === 'technician' ? { completion_message: completionMessage?.trim() || '' } : {})
+    };
+    await complaintReference.update(update);
     return res.json(normalizeComplaint({
-      data: () => ({ ...complaintSnapshot.data(), status }),
+      data: () => ({ ...complaintSnapshot.data(), ...update }),
       id
     }));
   } catch (error) {

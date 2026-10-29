@@ -10,7 +10,7 @@ const HazardMap = lazy(() => import('./HazardMap'));
 
 const translations = {
   en: {
-    language: 'Language', cityOperations: 'City operations', adminSignIn: 'Staff sign in', loginDescription: 'Access the road hazard operations dashboard.', username: 'Username', password: 'Password', signIn: 'Sign in', signingIn: 'Signing in...', prototypeLogin: 'Use your Firebase staff account', invalidCredentials: 'Invalid username or password.', roadHazardReview: 'Road hazard review', dashboardDescription: 'Monitor and triage reports from the citizen mobile app.', technicianDashboard: 'Technician workspace', technicianDescription: 'Work through verified hazards and report completed repairs.', adminRole: 'Administrator', technicianRole: 'Technician', liveQueue: 'Live queue', assignedWork: 'Assigned work', logOut: 'Log out', home: 'Home', hazards: 'Hazards', users: 'Users', settings: 'Settings', settingsDescription: 'Manage dashboard preferences.', usersDescription: 'Add and remove registered users.', fullName: 'Full name', email: 'Email', idNumber: 'ID number', phone: 'Phone', addUser: 'Add user', addingUser: 'Adding...', removeUser: 'Remove', removingUser: 'Removing...', loadingUsers: 'Loading users...', noUsers: 'No users found.', totalReports: 'Total reports', needsReview: 'Needs review', reviewed: 'Reviewed', completed: 'Completed', rejected: 'Rejected', complaintQueue: 'Complaint queue', queueDescription: 'Review submitted hazards and keep the city response team informed.', technicianQueueDescription: 'Complete verified hazards assigned to the field team.', report: 'Report', hazard: 'Hazard', location: 'Location', dateReported: 'Date reported', status: 'Status', action: 'Action', loading: 'Loading complaints...', noComplaints: 'No complaints found.', noAssignedWork: 'No verified hazards are waiting for repair.', markReviewed: 'Verify', reject: 'Reject', resolve: 'Complete', updating: 'Updating...', unableToLoad: 'Unable to load complaints. Your session may have expired.', updateFailed: 'The complaint could not be updated. Please try again.', unableToLoadUsers: 'Unable to load users.', userActionFailed: 'The user action could not be completed.', pending: 'Pending', resolved: 'Resolved', pothole: 'Pothole', fallenTree: 'Fallen Tree', brokenSign: 'Broken Sign'
+    language: 'Language', cityOperations: 'City operations', adminSignIn: 'Staff sign in', loginDescription: 'Access the road hazard operations dashboard.', username: 'Username', password: 'Password', signIn: 'Sign in', signingIn: 'Signing in...', prototypeLogin: 'Use your Firebase staff account', invalidCredentials: 'Invalid username or password.', roadHazardReview: 'Road hazard review', dashboardDescription: 'Monitor and triage reports from the citizen mobile app.', technicianDashboard: 'Technician workspace', technicianDescription: 'Work through verified hazards and report completed repairs.', adminRole: 'Administrator', technicianRole: 'Technician', liveQueue: 'Live queue', assignedWork: 'Assigned work', logOut: 'Log out', home: 'Home', hazards: 'Hazards', users: 'Users', settings: 'Settings', settingsDescription: 'Manage dashboard preferences.', usersDescription: 'Add and remove registered users.', fullName: 'Full name', email: 'Email', idNumber: 'ID number', phone: 'Phone', addUser: 'Add user', addingUser: 'Adding...', removeUser: 'Remove', removingUser: 'Removing...', loadingUsers: 'Loading users...', noUsers: 'No users found.', totalReports: 'Total reports', needsReview: 'Needs review', reviewed: 'Reviewed', completed: 'Completed', rejected: 'Rejected', complaintQueue: 'Complaint queue', queueDescription: 'Review submitted hazards and keep the city response team informed.', technicianQueueDescription: 'Complete verified hazards assigned to the field team.', report: 'Report', hazard: 'Hazard', location: 'Location', dateReported: 'Date reported', status: 'Status', action: 'Action', loading: 'Loading complaints...', noComplaints: 'No complaints found.', noAssignedWork: 'No verified hazards are waiting for repair.', markReviewed: 'Verify', reject: 'Reject', resolve: 'Complete', completionMessage: 'Completion message (optional)', completionNote: 'Technician note', saveCompletion: 'Complete task', cancel: 'Cancel', updating: 'Updating...', unableToLoad: 'Unable to load complaints. Your session may have expired.', updateFailed: 'The complaint could not be updated. Please try again.', unableToLoadUsers: 'Unable to load users.', userActionFailed: 'The user action could not be completed.', pending: 'Pending', resolved: 'Resolved', pothole: 'Pothole', fallenTree: 'Fallen Tree', brokenSign: 'Broken Sign'
   },
   si: {
     language: 'භාෂාව', cityOperations: 'නගර මෙහෙයුම්', adminSignIn: 'පරිපාලක පිවිසුම', loginDescription: 'මාර්ග අනතුරු පැමිණිලි පෝලිමට පිවිසෙන්න.', username: 'පරිශීලක නාමය', password: 'මුරපදය', signIn: 'පරිපාලක ලෙස පිවිසෙන්න', signingIn: 'පිවිසෙමින්...', prototypeLogin: 'ආදර්ශ පිවිසුම: admin / admin123', invalidCredentials: 'පරිශීලක නාමය හෝ මුරපදය වැරදියි.', roadHazardReview: 'මාර්ග අනතුරු සමාලෝචනය', dashboardDescription: 'පුරවැසි ජංගම යෙදුමෙන් ලැබෙන වාර්තා පරීක්ෂා කරන්න.', liveQueue: 'සජීවී පෝලිම', logOut: 'ඉවත් වන්න', home: 'මුල් පිටුව', hazards: 'අනතුරු', settings: 'සැකසුම්', settingsDescription: 'උපකරණ පුවරු මනාප කළමනාකරණය කරන්න.', totalReports: 'මුළු වාර්තා', needsReview: 'සමාලෝචනය අවශ්‍යයි', reviewed: 'සමාලෝචනය කළ', completed: 'සම්පූර්ණ කළ', rejected: 'ප්‍රතික්ෂේප කළ', complaintQueue: 'පැමිණිලි පෝලිම', queueDescription: 'වාර්තා කළ අනතුරු සමාලෝචනය කර ප්‍රතිචාර කණ්ඩායම දැනුවත් කරන්න.', report: 'වාර්තාව', hazard: 'අනතුර', location: 'ස්ථානය', dateReported: 'වාර්තා කළ දිනය', status: 'තත්ත්වය', action: 'ක්‍රියාව', loading: 'පැමිණිලි පූරණය වෙමින්...', noComplaints: 'පැමිණිලි හමු නොවීය.', markReviewed: 'තහවුරු කරන්න', reject: 'ප්‍රතික්ෂේප කරන්න', resolve: 'සම්පූර්ණ කරන්න', updating: 'යාවත්කාලීන කරමින්...', unableToLoad: 'පැමිණිලි පූරණය කළ නොහැක. ඔබගේ සැසිය අවසන් වී තිබිය හැක.', updateFailed: 'පැමිණිල්ල යාවත්කාලීන කළ නොහැක. නැවත උත්සාහ කරන්න.', pending: 'පොරොත්තුවෙන්', resolved: 'විසඳන ලදී', pothole: 'වළක්', fallenTree: 'වැටුණු ගස', brokenSign: 'කැඩුණු සංඥා පුවරුව'
@@ -137,21 +137,26 @@ function App() {
     setError('');
   };
 
-  const handleStatusUpdate = async (id, status) => {
+  const handleStatusUpdate = async (id, status, completionMessage = '') => {
     setUpdatingId(id);
     setError('');
 
     try {
       const response = await axios.patch(
         `http://localhost:5000/api/complaints/${id}/status`,
-        { status },
+        {
+          status,
+          ...(role === 'technician' && status === 'Resolved' ? { completion_message: completionMessage } : {})
+        },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setComplaints((currentComplaints) => currentComplaints.map((complaint) => (
         complaint.id === id ? response.data : complaint
       )));
+      return true;
     } catch {
       setError(text.updateFailed);
+      return false;
     } finally {
       setUpdatingId(null);
     }
