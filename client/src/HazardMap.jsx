@@ -28,10 +28,13 @@ function FitMapToMarkers({ positions, focusPosition }) {
   return null;
 }
 
-function HazardMap({ text, complaints, isLoading, selectedHazardId }) {
+function HazardMap({ text, complaints, isLoading, selectedHazardId, isTechnician }) {
   const statusColors = { Pending: '#c77d12', Reviewed: '#0f766e', Resolved: '#2854a5', Rejected: '#b42318' };
   const hazardLabels = { Pothole: text.pothole, 'Fallen Tree': text.fallenTree, 'Broken Sign': text.brokenSign };
   const statusLabels = { Pending: text.pending, Reviewed: text.reviewed, Resolved: text.resolved, Rejected: text.rejected };
+  const taskStatusColors = { Assigned: '#0f766e', Started: '#0f766e', 'In Progress': '#2351a2', Completed: '#17653a', Blocked: '#a64b0d' };
+  const taskStatusLabels = { Assigned: text.assignedStatus, Started: text.started, 'In Progress': text.inProgressStatus, Completed: text.completedStatus, Blocked: text.blockedStatus };
+  const legendColors = isTechnician ? taskStatusColors : statusColors;
   const mappedComplaints = complaints.map((complaint) => ({
     ...complaint,
     coordinates: getHazardCoordinates(complaint.location)
@@ -63,12 +66,14 @@ function HazardMap({ text, complaints, isLoading, selectedHazardId }) {
               key={complaint.id}
               center={complaint.coordinates}
               radius={complaint.id === selectedHazardId ? 12 : 9}
-              pathOptions={{ color: complaint.id === selectedHazardId ? '#111827' : '#fff', weight: complaint.id === selectedHazardId ? 3 : 2, fillColor: statusColors[complaint.status] || '#4b5563', fillOpacity: 0.95 }}
+              pathOptions={{ color: complaint.id === selectedHazardId ? '#111827' : '#fff', weight: complaint.id === selectedHazardId ? 3 : 2, fillColor: isTechnician ? taskStatusColors[complaint.taskStatus || 'Assigned'] : statusColors[complaint.status] || '#4b5563', fillOpacity: 0.95 }}
             >
               <Popup>
                 <strong>{complaint.id}</strong><br />
                 {hazardLabels[complaint.hazard_type] || complaint.hazard_type}<br />
-                {statusLabels[complaint.status] || complaint.status}
+                {isTechnician
+                  ? taskStatusLabels[complaint.taskStatus || 'Assigned']
+                  : statusLabels[complaint.status] || complaint.status}
               </Popup>
             </CircleMarker>
           ))}
@@ -77,9 +82,10 @@ function HazardMap({ text, complaints, isLoading, selectedHazardId }) {
       <footer className="d-flex flex-wrap align-items-center gap-3 px-4 py-3 border-top small text-secondary">
         {isLoading && <span>{text.loading}</span>}
         {!isLoading && mappedComplaints.length === 0 && <span>{text.noMappedHazards}</span>}
-        {Object.entries(statusColors).map(([status, color]) => (
+        {Object.entries(legendColors).map(([status, color]) => (
           <span className="d-inline-flex align-items-center gap-2" key={status}>
-            <span className="hazard-map-legend-dot" style={{ backgroundColor: color }} />{statusLabels[status]}
+            <span className="hazard-map-legend-dot" style={{ backgroundColor: color }} />
+            {isTechnician ? taskStatusLabels[status] : statusLabels[status]}
           </span>
         ))}
       </footer>
