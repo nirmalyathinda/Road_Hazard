@@ -4,6 +4,7 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from './firebase';
 import AdminDashboard from './AdminDashboard';
 import TechnicianDashboard from './TechnicianDashboard';
+import { getTechnicianTasks } from './technicianTasks';
 import 'leaflet/dist/leaflet.css';
 
 const HazardMap = lazy(() => import('./HazardMap'));
@@ -34,6 +35,22 @@ const noMappedHazardLabels = {
   si: 'පෙන්වීමට වලංගු ඛණ්ඩාංක සහිත අනතුරු නැත.',
   ta: 'காட்டுவதற்கு சரியான ஆயத்தொலைவுகளுடன் ஆபத்துகள் இல்லை.'
 };
+const technicianLabels = {
+  en: {
+    technicianWorkspace: 'FIELD WORKSPACE', technicianWorkTitle: 'Your assigned work', technicianWorkDescription: 'Update each verified hazard, record the repair, and flag anything that needs extra attention.', assignedTasks: 'Assigned tasks', tasksLabel: 'tasks', inProgressStatus: 'In progress', blockedStatus: 'Blocked', reinspectionFlagged: 'Re-inspection', tasksOverview: 'Task overview', taskStatusOverview: 'Task status overview', taskChartDescription: 'A snapshot of your assigned work and items needing attention.', taskListDescription: 'Open a task to record progress and repair details.', noAssignedTasks: 'You’re all caught up', noAssignedTasksDescription: 'New verified work will appear here when it is assigned.', reportNumber: 'REPORT', taskStatus: 'Task status', started: 'Started', completedStatus: 'Completed', assignedStatus: 'Assigned', completionNotes: 'Completion notes', completionNotesHint: 'Describe the work completed or what is preventing progress.', materialsUsed: 'Materials used', materialsHint: 'List materials used, or enter “None”.', timeTaken: 'Time taken', hours: 'hours', flagEscalation: 'Escalate: larger repair needed', needsReinspection: 'Completed job needs re-inspection', saveTask: 'Save task update', savingTask: 'Saving...', viewOnMap: 'View on map', getDirections: 'Get directions', mapUnavailable: 'Location not provided', escalationFlagged: 'Escalated', taskUpdateFailed: 'Task update failed. Please try again.'
+  },
+  si: {
+    technicianWorkspace: 'ක්ෂේත්‍ර වැඩ පුවරුව', technicianWorkTitle: 'ඔබට පවරා ඇති වැඩ', technicianWorkDescription: 'තහවුරු කළ අනතුරු යාවත්කාලීන කර, අලුත්වැඩියා විස්තර සටහන් කර, වැඩි අවධානය අවශ්‍ය දේ දැනුම් දෙන්න.', assignedTasks: 'පවරා ඇති වැඩ', tasksLabel: 'වැඩ', inProgressStatus: 'කරමින් පවතී', blockedStatus: 'අවහිර වී ඇත', reinspectionFlagged: 'නැවත පරීක්ෂාව', tasksOverview: 'වැඩ සාරාංශය', taskStatusOverview: 'වැඩ තත්ත්ව සාරාංශය', taskChartDescription: 'පවරා ඇති වැඩ සහ අවධානය අවශ්‍ය වැඩ පිළිබඳ සාරාංශයක්.', taskListDescription: 'ප්‍රගතිය සහ අලුත්වැඩියා විස්තර සටහන් කිරීමට වැඩක් විවෘත කරන්න.', noAssignedTasks: 'දැනට පවරා ඇති වැඩ නැත', noAssignedTasksDescription: 'නව තහවුරු කළ වැඩක් පවරන විට මෙහි පෙන්වනු ඇත.', reportNumber: 'වාර්තාව', taskStatus: 'වැඩ තත්ත්වය', started: 'ආරම්භ කළා', completedStatus: 'සම්පූර්ණයි', assignedStatus: 'පවරා ඇත', completionNotes: 'අවසන් කිරීමේ සටහන්', completionNotesHint: 'කළ වැඩ හෝ ඉදිරියට යාම වළක්වන කරුණ සටහන් කරන්න.', materialsUsed: 'භාවිත කළ ද්‍රව්‍ය', materialsHint: 'භාවිත කළ ද්‍රව්‍ය හෝ “කිසිවක් නැත” සටහන් කරන්න.', timeTaken: 'ගත වූ කාලය', hours: 'පැය', flagEscalation: 'ඉහළ මට්ටමේ අලුත්වැඩියාවක් අවශ්‍යයි', needsReinspection: 'සම්පූර්ණ කළ වැඩ නැවත පරීක්ෂා කළ යුතුයි', saveTask: 'වැඩ යාවත්කාලීන කරන්න', savingTask: 'සුරකිමින්...', viewOnMap: 'සිතියමේ බලන්න', getDirections: 'ගමන් මාර්ගය', mapUnavailable: 'ස්ථානයක් ලබා දී නැත', escalationFlagged: 'ඉහළට යොමු කළා', taskUpdateFailed: 'වැඩ යාවත්කාලීන කළ නොහැක. නැවත උත්සාහ කරන්න.'
+  },
+  ta: {
+    technicianWorkspace: 'களப்பணி மையம்', technicianWorkTitle: 'உங்களுக்கு ஒதுக்கப்பட்ட பணிகள்', technicianWorkDescription: 'சரிபார்க்கப்பட்ட ஆபத்துகளைப் புதுப்பித்து, பழுதுபார்ப்பு விவரங்களைப் பதிவு செய்து, கூடுதல் கவனம் தேவைப்படுவதை குறிக்கவும்.', assignedTasks: 'ஒதுக்கப்பட்ட பணிகள்', tasksLabel: 'பணிகள்', inProgressStatus: 'நடைபெறுகிறது', blockedStatus: 'தடைப்பட்டது', reinspectionFlagged: 'மறுபரிசோதனை', tasksOverview: 'பணி சுருக்கம்', taskStatusOverview: 'பணி நிலை சுருக்கம்', taskChartDescription: 'ஒதுக்கப்பட்ட பணிகள் மற்றும் கவனம் தேவைப்படும் உருப்படிகளின் சுருக்கம்.', taskListDescription: 'முன்னேற்றம் மற்றும் பழுதுபார்ப்பு விவரங்களைப் பதிவு செய்ய ஒரு பணியைத் திறக்கவும்.', noAssignedTasks: 'நிலுவையில் பணிகள் இல்லை', noAssignedTasksDescription: 'புதிய சரிபார்க்கப்பட்ட பணி ஒதுக்கப்பட்டதும் இங்கே தோன்றும்.', reportNumber: 'அறிக்கை', taskStatus: 'பணி நிலை', started: 'தொடங்கியது', completedStatus: 'முடிந்தது', assignedStatus: 'ஒதுக்கப்பட்டது', completionNotes: 'நிறைவு குறிப்புகள்', completionNotesHint: 'செய்த வேலையை அல்லது முன்னேற்றத்தைத் தடுக்கும் காரணத்தை விவரிக்கவும்.', materialsUsed: 'பயன்படுத்திய பொருட்கள்', materialsHint: 'பயன்படுத்திய பொருட்களை அல்லது “எதுவுமில்லை” என உள்ளிடவும்.', timeTaken: 'எடுத்த நேரம்', hours: 'மணி', flagEscalation: 'பெரிய பழுதுபார்ப்புக்கு மேல்முறையீடு செய்யவும்', needsReinspection: 'முடித்த பணி மறுபரிசோதனை தேவை', saveTask: 'பணி புதுப்பிப்பைச் சேமிக்கவும்', savingTask: 'சேமிக்கிறது...', viewOnMap: 'வரைபடத்தில் காண்க', getDirections: 'வழிகளைப் பெறுக', mapUnavailable: 'இருப்பிடம் வழங்கப்படவில்லை', escalationFlagged: 'மேல்முறையீடு செய்யப்பட்டது', taskUpdateFailed: 'பணியைப் புதுப்பிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.'
+  }
+};
+const serverHintLabels = {
+  en: 'Start the backend from the server folder, then retry.',
+  si: 'server ෆෝල්ඩරයෙන් backend එක ආරම්භ කර නැවත උත්සාහ කරන්න.',
+  ta: 'server கோப்புறையிலிருந்து backend-ஐத் தொடங்கி மீண்டும் முயற்சிக்கவும்.'
+};
 
 function App() {
   const [language, setLanguage] = useState(() => localStorage.getItem('road-hazard-language') || 'en');
@@ -43,6 +60,7 @@ function App() {
   const [loginError, setLoginError] = useState('');
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [complaints, setComplaints] = useState([]);
+  const [complaintsRefreshKey, setComplaintsRefreshKey] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [updatingId, setUpdatingId] = useState(null);
@@ -57,6 +75,9 @@ function App() {
   const text = {
     ...translations.en,
     ...translations[language],
+    ...(technicianLabels[language] || technicianLabels.en),
+    serverHint: serverHintLabels[language] || serverHintLabels.en,
+    retryLoad: language === 'si' ? 'නැවත උත්සාහ කරන්න' : language === 'ta' ? 'மீண்டும் முயற்சிக்கவும்' : 'Retry',
     assign: assignLabels[language] || assignLabels.en,
     mapView: mapLabels[language] || mapLabels.en,
     mapDescription: mapDescriptionLabels[language] || mapDescriptionLabels.en,
@@ -71,26 +92,43 @@ function App() {
     localStorage.setItem('road-hazard-language', nextLanguage);
   };
 
+  const handleRetryComplaints = () => {
+    setIsLoading(true);
+    setError('');
+    setComplaintsRefreshKey((current) => current + 1);
+  };
+
   useEffect(() => {
     if (!token) {
       return;
     }
 
+    let active = true;
+    let isFetching = false;
     const fetchComplaints = async () => {
+      if (!active || isFetching) return;
+      isFetching = true;
       try {
         const response = await axios.get('http://localhost:5000/api/complaints', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setComplaints(response.data);
+        if (active) setComplaints(response.data);
       } catch {
-        setError(text.unableToLoad);
+        if (active) setError(text.unableToLoad);
       } finally {
-        setIsLoading(false);
+        isFetching = false;
+        if (active) setIsLoading(false);
       }
     };
 
     fetchComplaints();
-  }, [token, text.unableToLoad]);
+    const refreshTimer = role === 'technician' ? window.setInterval(fetchComplaints, 10000) : null;
+
+    return () => {
+      active = false;
+      if (refreshTimer !== null) window.clearInterval(refreshTimer);
+    };
+  }, [role, token, text.unableToLoad, complaintsRefreshKey]);
 
   useEffect(() => {
     if (!token || role !== 'admin' || activePage !== 'users') return;
@@ -115,6 +153,8 @@ function App() {
     event.preventDefault();
     setIsLoggingIn(true);
     setLoginError('');
+    setIsLoading(true);
+    setError('');
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, credentials.username, credentials.password);
@@ -123,6 +163,7 @@ function App() {
       const nextRole = tokenResult.claims.role === 'technician' ? 'technician' : 'admin';
       setToken(firebaseToken);
       setRole(nextRole);
+      setActivePage('home');
     } catch {
       setLoginError(text.invalidCredentials);
     } finally {
@@ -152,6 +193,26 @@ function App() {
       )));
     } catch {
       setError(text.updateFailed);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const handleTaskUpdate = async (id, task) => {
+    setUpdatingId(id);
+    setError('');
+
+    try {
+      const response = await axios.patch(
+        `http://localhost:5000/api/complaints/${id}/task`,
+        task,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setComplaints((currentComplaints) => currentComplaints.map((complaint) => (
+        complaint.id === id ? response.data : complaint
+      )));
+    } catch {
+      setError(text.taskUpdateFailed);
     } finally {
       setUpdatingId(null);
     }
@@ -243,12 +304,12 @@ function App() {
       <main className="container py-4 py-lg-5">
         {activePage === 'map' ? (
           <Suspense fallback={<div className="py-5 text-center text-secondary">{text.loading}</div>}>
-            <HazardMap text={text} complaints={isTechnician ? complaints.filter((complaint) => complaint.status === 'Reviewed') : complaints} isLoading={isLoading} selectedHazardId={selectedHazardId} />
+            <HazardMap text={text} complaints={isTechnician ? getTechnicianTasks(complaints) : complaints} isLoading={isLoading} selectedHazardId={selectedHazardId} isTechnician={isTechnician} />
           </Suspense>
         ) : isTechnician ? (
-          <TechnicianDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} onLocationClick={handleLocationClick} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} />
+          <TechnicianDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onRetry={handleRetryComplaints} onTaskUpdate={handleTaskUpdate} onLocationClick={handleLocationClick} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} />
         ) : (
-          <AdminDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onStatusUpdate={handleStatusUpdate} onLocationClick={handleLocationClick} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} users={users} usersLoading={usersLoading} userForm={userForm} usersError={usersError} isSavingUser={isSavingUser} removingId={removingId} onUserFormChange={handleUserFormChange} onAddUser={handleAddUser} onRemoveUser={handleRemoveUser} />
+          <AdminDashboard text={text} activePage={activePage} complaints={complaints} isLoading={isLoading} updatingId={updatingId} error={error} onRetry={handleRetryComplaints} onStatusUpdate={handleStatusUpdate} onLocationClick={handleLocationClick} language={language} languageOptions={languageOptions} onLanguageChange={changeLanguage} users={users} usersLoading={usersLoading} userForm={userForm} usersError={usersError} isSavingUser={isSavingUser} removingId={removingId} onUserFormChange={handleUserFormChange} onAddUser={handleAddUser} onRemoveUser={handleRemoveUser} />
         )}
       </main>
     </div>

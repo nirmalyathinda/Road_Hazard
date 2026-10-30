@@ -71,7 +71,13 @@ const normalizeComplaint = (document) => {
     date_reported: dateReported?.toDate ? dateReported.toDate().toISOString() : dateReported || '',
     status: complaint.status || complaint.Status || 'Pending',
     action: complaint.action || complaint.Action || '',
-    image_url: complaint.image_url || complaint.imageUrl || ''
+    image_url: complaint.image_url || complaint.imageUrl || '',
+    taskStatus: complaint.taskStatus || '',
+    completionNotes: complaint.completionNotes || '',
+    materialsUsed: complaint.materialsUsed || '',
+    timeTaken: complaint.timeTaken ?? null,
+    escalated: complaint.escalated === true,
+    needsReinspection: complaint.needsReinspection === true
   };
 };
 
@@ -155,13 +161,42 @@ const normalizeUser = (document) => {
   };
 };
 
+const findComplaintReference = async (id) => {
+  let reference = complaintsCollection.doc(id);
+  let snapshot = await reference.get();
+
+  if (!snapshot.exists) {
+    for (const identifierField of ['id', 'report', 'Report']) {
+      const matchingDocuments = await complaintsCollection
+        .where(identifierField, '==', id)
+        .limit(1)
+        .get();
+
+      if (!matchingDocuments.empty) {
+        reference = matchingDocuments.docs[0].ref;
+        snapshot = matchingDocuments.docs[0];
+        break;
+      }
+    }
+  }
+
+  return snapshot.exists ? { reference, snapshot } : null;
+};
+
 // GET endpoint: Fetch all complaints
 app.get('/api/complaints', requireAdmin, async (req, res) => {
   try {
     const snapshot = await complaintsCollection.get();
-    const complaints = snapshot.docs
+    let complaints = snapshot.docs
       .map(normalizeComplaint)
       .sort((first, second) => new Date(second.date_reported) - new Date(first.date_reported));
+
+    if (req.user.role === 'technician') {
+      complaints = complaints.filter((complaint) => (
+        complaint.status === 'Reviewed' || (complaint.status === 'Resolved' && complaint.needsReinspection)
+      ));
+    }
+
     res.json(complaints);
   } catch (error) {
     console.error(error);
@@ -175,49 +210,100 @@ app.patch('/api/complaints/:id/status', requireAdmin, async (req, res) => {
   const { status } = req.body;
   const allowedStatuses = ['Pending', 'Reviewed', 'Rejected', 'Resolved'];
 
+  if (req.user.role === 'technician') {
+    return res.status(403).json({ message: 'Technicians must use the task update endpoint' });
+  }
+
   if (!allowedStatuses.includes(status)) {
     return res.status(400).json({ message: 'Invalid complaint status' });
   }
 
-  if (req.user.role === 'technician' && status !== 'Resolved') {
-    return res.status(403).json({ message: 'Technicians can only complete reviewed complaints' });
-  }
-
   try {
-    let complaintReference = complaintsCollection.doc(id);
-    let complaintSnapshot = await complaintReference.get();
-
-    if (!complaintSnapshot.exists) {
-      for (const identifierField of ['id', 'report', 'Report']) {
-        const matchingDocuments = await complaintsCollection
-          .where(identifierField, '==', id)
-          .limit(1)
-          .get();
-
-        if (!matchingDocuments.empty) {
-          complaintReference = matchingDocuments.docs[0].ref;
-          complaintSnapshot = matchingDocuments.docs[0];
-          break;
-        }
-      }
-    }
-
-    if (!complaintSnapshot.exists) {
+    const complaint = await findComplaintReference(id);
+    if (!complaint) {
       return res.status(404).json({ message: 'Complaint not found' });
     }
 
-    if (req.user.role === 'technician' && normalizeComplaint(complaintSnapshot).status !== 'Reviewed') {
-      return res.status(409).json({ message: 'Only reviewed complaints can be completed' });
+    const complaintData = complaint.snapshot.data();
+    const update = { status };
+
+    if (status === 'Reviewed') {
+      update.taskStatus = complaintData.taskStatus || 'Started';
+      update.completionNotes = complaintData.completionNotes || '';
+      update.materialsUsed = complaintData.materialsUsed || '';
+      update.timeTaken = complaintData.timeTaken ?? null;
+      update.escalated = complaintData.escalated === true;
+      update.needsReinspection = complaintData.needsReinspection === true;
     }
 
-    await complaintReference.update({ status });
+    await complaint.reference.update(update);
     return res.json(normalizeComplaint({
-      data: () => ({ ...complaintSnapshot.data(), status }),
+      data: () => ({ ...complaintData, ...update }),
       id
     }));
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: 'Unable to update complaint in Firebase' });
+  }
+});
+
+app.patch('/api/complaints/:id/task', requireAdmin, async (req, res) => {
+  if (req.user.role !== 'technician') {
+    return res.status(403).json({ message: 'Technician access required' });
+  }
+
+  const task = req.body;
+  const allowedTaskStatuses = ['Started', 'In Progress', 'Completed', 'Blocked'];
+
+  if (!task || typeof task !== 'object' || Array.isArray(task)) {
+    return res.status(400).json({ message: 'Task details are required' });
+  }
+
+  const { taskStatus, completionNotes, materialsUsed, timeTaken, escalated, needsReinspection } = task;
+  if (
+    !allowedTaskStatuses.includes(taskStatus)
+    || typeof completionNotes !== 'string'
+    || completionNotes.length > 2000
+    || typeof materialsUsed !== 'string'
+    || materialsUsed.length > 2000
+    || (timeTaken !== null && (typeof timeTaken !== 'number' || !Number.isFinite(timeTaken) || timeTaken < 0))
+    || typeof escalated !== 'boolean'
+    || typeof needsReinspection !== 'boolean'
+    || (needsReinspection && taskStatus !== 'Completed')
+  ) {
+    return res.status(400).json({ message: 'Invalid task details' });
+  }
+
+  try {
+    const complaint = await findComplaintReference(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({ message: 'Complaint not found' });
+    }
+
+    const currentComplaint = normalizeComplaint(complaint.snapshot);
+    const isAssignedTask = currentComplaint.status === 'Reviewed'
+      || (currentComplaint.status === 'Resolved' && currentComplaint.needsReinspection);
+
+    if (!isAssignedTask) {
+      return res.status(409).json({ message: 'This task is not assigned or is already closed' });
+    }
+
+    const status = taskStatus === 'Completed' ? 'Resolved' : 'Reviewed';
+    await complaint.reference.update({
+      status,
+      taskStatus,
+      completionNotes: completionNotes.trim(),
+      materialsUsed: materialsUsed.trim(),
+      timeTaken,
+      escalated,
+      needsReinspection
+    });
+
+    const updatedSnapshot = await complaint.reference.get();
+    return res.json(normalizeComplaint(updatedSnapshot));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: 'Unable to update technician task in Firebase' });
   }
 });
 

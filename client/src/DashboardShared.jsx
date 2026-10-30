@@ -1,3 +1,17 @@
+export function DataLoadError({ text, error, onRetry }) {
+  if (!error) return null;
+
+  return (
+    <div className="alert alert-danger d-flex flex-wrap justify-content-between align-items-center gap-3" role="alert">
+      <div>
+        <strong>{error}</strong>
+        <div className="small mt-1">{text.serverHint}</div>
+      </div>
+      <button type="button" className="btn btn-sm btn-outline-danger" onClick={onRetry}>{text.retryLoad}</button>
+    </div>
+  );
+}
+
 export function DashboardStats({ text, complaints }) {
   const pendingCount = complaints.filter((complaint) => complaint.status === 'Pending').length;
   const reviewedCount = complaints.filter((complaint) => complaint.status === 'Reviewed').length;
